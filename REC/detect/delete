@@ -1,0 +1,5 @@
+#!/bin/sh
+
+rm -rf /CMS.REC/detect-data/*
+cp /CMS/REC/detect/.htaccess /CMS.REC/detect-data/
+echo "/CMS.REC/detect-data/ has been cleared."

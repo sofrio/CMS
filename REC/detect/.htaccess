@@ -1,0 +1,3 @@
+FileEtag None
+RequestHeader unset If-Modified-Since
+Header set Cache-Control no-store

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>CMS カレンダーに関する詳細説明</title>
+</head>
+<body>
+<h2>CMS カレンダーに関する詳細説明</h2>
+<h3>地図サーバーと各カメラの動きについて</h3>
+<nl>
+<li>各カメラは赤外線感応により録画を開始したら、その旨を地図サーバーに<font color="brown">通知</font>し動画を送信する。</li>
+<li>地図サーバーは<font color="brown">録画通知</font>を受けたら、そのカメラ用の<font color=red>吹き出し</font>を地図上に表示し受信した録画の再生を開始する。</li>
+<li>各カメラは赤外線感応が続く間は、地図サーバーに<font color="brown">録画通知</font>を送り続ける。</li>
+<li>地図サーバーはカメラから連続して<font color="brown">録画通知</font>が来る間は、録画の再生を続ける。</li>
+<li>各カメラは赤外線感応が無くなったら、<font color="brown">録画通知</font>の送信をやめる。</li>
+<li>地図サーバーはカメラからの<font color="brown">録画通知</font>が途絶えて<b>30秒以上</b>経つと、そのカメラ用の<b><font color=red>吹き出し</font>を消去する</b>。<b>(*1)</b></li>
+</nl>
+
+<h3>カレンダーへの登録方法</h3>
+　地図サーバはカメラからの<font color="brown">録画通知</font>に対して、以下のようにカレンダー登録する。
+<nl>
+<li>最後の<font color="brown">録画通知</font>から<b>5分以上</b>経過してる場合は、カレンダーに<b>新たな予定</b>として追加する。</li>
+<li>最後の<font color="brown">録画通知</font>から<b>30秒以上</b>経過してる場合は、最後の予定に<b>新たな地図リンク</b>として追記する。<b>(*2)</b></li>
+<li>最後の<font color="brown">録画通知</font>からの経過が<b>30秒未満</b>の場合は、何もしない。</li>
+<li>なお、<font color="brown">録画通知</font>が連続してる場合でも、最後の<font color="brown">録画通知</font>からの経過で<b>正時（0分0秒）</b>を跨いだ場合は、強制的に<b>新たな予定</b>として追加する。</li>
+<li>従って、カレンダー上の予定の最長時間は<b>1時間</b>となる。</li>
+</nl>
+
+<p>
+　上記から
+<h3>
+・リンク先の地図から<font color=red>吹き出し</font>が無くなった。<br>
+<b>⇒</b> 最後の<font color="brown">録画通知</font>から<b>30秒以上</b>経過している。<b>(*1)</b><br>
+<b>⇒</b> これ以後の<font color="brown">録画通知</font>は<b>次の地図リンク</b>に記録されている。<b>(*2)</b><br>
+<b>⇒</b> この<b>地図リンク</b>には次のリンクの時刻まで録画はない。
+</h3>
+である。<br>
+ただし、そのままの地図でも、次のリンクの時刻になれば、再び<font color=red>吹き出し</font>が現れる。
+<p>
+<a href="#" onClick="window.close(); return false;">閉じる</a></p>
+</body>
+</html>
+

@@ -1,0 +1,558 @@
+﻿<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=Shift_JIS">
+<title>CMS / NPTS システム説明書 第３版</title>
+<style type="text/css">
+.newPage { page-break-before: always; }
+</style>
+</head>
+<body>
+<h1>CMS / NPTS システム説明書 <font color=red>第３版</font></h1>
+<p align=right>
+<del>2018.08.27</del><br>
+<del>2018.10.25</del><br>
+<font color=red>2019.02.11</font><br>
+小島昌彦
+<p>
+<h3>== 目次 ==</h3>
+
+<a href="#システムの概要"><b>■ システムの概要</b></a>
+<ul>
+<li><a href="#改定履歴">改定履歴</a> <font color=red>(第３版で追加)</font></li>
+<li><a href="#機能概要">機能概要</a></li>
+<li><a href="#閲覧概要">閲覧概要</a></li>
+<li><a href="#動作サンプル">動作サンプル</a></li>
+<li><a href="#モジュール構成">モジュール構成</a></li>
+<li><a href="#GPS端末動作環境">GPS端末動作環境</a></li>
+<li><a href="#サーバー動作環境">サーバー動作環境</a></font></li>
+</ul>
+
+<a href="#システムの使い方"><b>■ システムの使い方</b></a>
+<ul>
+<li><a href="#GPS端末の操作">GPS端末の操作</a></li>
+<ul>
+<li><a href="#GPS端末の登録">GPS端末の登録</a></li>
+<li><a href="#カメラの起動">カメラの起動</a></li>
+<li><a href="#ナンバープレートの起動">ナンバープレートの起動</a></li>
+</ul>
+<li><a href="#閲覧操作">閲覧操作</a></li>
+<ul>
+<li><a href="#Googleカレンダー">Googleカレンダー</a></li>
+<li><a href="#Googleマップ">Googleマップ</a></li>
+<li><a href="#表示・再生の制御">表示・再生の制御</a></li>
+<li><a href="#オブジェクト分析の制御">オブジェクト分析の制御</a></li>
+<li><a href="#カメラ・端末の設定">カメラ・端末の設定</a></li>
+</ul>
+</ul>
+
+<!--
+<a href="#データフロー"><b>■ データフロー</b></a>
+<ul>
+<li><a href="#データのアップロード">データのアップロード</a></li>
+<ul>
+<li><a href="#アップロード.メタデータ">メタデータ</a></li>
+<li><a href="#アップロード.画像データ">画像データ</a></li>
+</ul>
+<li><a href="#データの保管">データの保管</a></li>
+<ul>
+<li><a href="#保管.メタデータ">メタデータ</a></li>
+<li><a href="#保管.画像データ">画像データ</a></li>
+</ul>
+<li><a href="#データの閲覧・再生">データの閲覧・再生</a></li>
+<ul>
+<li><a href="#GPS端末の存在判定">GPS端末の存在判定</a></li>
+<li><a href="#動画再生">動画再生</a></li>
+<li><a href="#軌跡表示">軌跡表示</a></li>
+</ul>
+</ul>
+-->
+
+<a href="#オブジェクト分析"><b>■ オブジェクト分析</b></a>
+<ul>
+<li><a href="#実装方法の検討">実装方法の検討</a></li>
+<li><a href="#分析方法の概要">分析方法の概要</a></li>
+<ul>
+<li><a href="#Particle">Particle 追跡モジュール</a></li>
+</ul>
+</ul>
+
+<p class="newPage">
+<a name="システムの概要"></a>
+<hr>
+<h2>■ システムの概要</h2>
+
+<p>
+<a name="改定履歴"></a>
+<font color=red><h3>● 改定履歴　（第３版で追加）</h3></font>
+<ul>
+<li>2018.08.27　第１版。</li>
+<li>2018.10.25　第２版 - オブジェクト分析機能を追加。</li>
+<li>2019.02.11　第３版 - サーバー機を変更。</li>
+</ul>
+<p>
+<a name="機能概要"></a>
+<h3>● 機能概要</h3>
+<ul>
+<li>本システムは、遠隔地にある複数のGPS端末と通信し、そのアップロードデータを保管・管理・閲覧・再生するシステムである。</li>
+<li>GPS端末としては、定点設置の動画中継カメラや車載GPS通信端末が想定されているが、特に制約はない。</li>
+<li>GPS端末からアップロードされるデータは、端末の位置や方向、標高や温湿度等の環境データであり、以降これらを<b>メタデータ</b>と呼ぶ。</li>
+<li>それに加え、カメラ型の端末の場合は、撮影した動画データもアップロードされてくる。</li>
+<li>その代わり、カメラ型の端末の場合は、アップロードされる<b>メタデータ</b>は端末の位置情報のみである。</li>
+<li>また、カメラ型の端末には人感センサーが搭載されていて、センサー感知時のみデータをアップロードするような機能も備わっている。</li>
+<li>これらのデータを全て保管した上で、閲覧要求により全ての保管データが閲覧・再生できるようになっている。</li>
+<li>動画データの再生の際には、オブジェクト抽出と追跡を行う機能も併せ持つ。</li>
+</ul>
+
+<a name="閲覧概要"></a>
+<h3>● 閲覧概要</h3>
+<ul>
+<li>アップロードされたデータを効率よく閲覧するには、特定日時におけるアップロードデータの有無が一覧できる必要がある。</li>
+<li>これを実現するため、<b>Google Calendar API</b>を利用している。</li>
+<li>アップロードデータの有無をカレンダー上の該当箇所に明記し、下記の<b>地図サイトへのアクセスリンク</b>も貼っておく。</li>
+<li>各端末のアップロードデータは、<b>Google Maps API</b>を利用してGoogle地図上に表示される。</li>
+<li>複数端末のデータが地図上の該当する位置に同時に表示される。</li>
+<li>カメラ型の端末の場合は、対応する時刻に録画された動画も再生される（音声付も可）。</li>
+<li>再生の際には、オブジェクト抽出と追跡を行うか否かの指定もできる。</li>
+</ul>
+
+<a name="動作サンプル"></a>
+<font color=red><h3>● 動作サンプル　（第２版で追加）</font></h3>
+　<b>Google Maps</b>を利用した地図の表示具合は以下のリンクから確認できる。<br>
+（本来であれば、上記にあるように<b>Google Calendar</b>上に記録された<b>地図サイトへのアクセスリンク</b>を経由してアクセスする）
+<ul>
+<li><b>cameramap</b>エントリ
+　カメラ型端末用のサーバー・エントリである。<br>
+各端末で録画された動画が地図上で再生される。
+<ul>
+<li><a href="http://cms.japaneast.cloudapp.azure.com:60/cameramap/?date=2018/07/15+11:00:00&detect=false" target=_blank>IoTメディアラボラトリーからの常時録画</a></li>
+<li><a href="http://cms.japaneast.cloudapp.azure.com:60/cameramap/?date=2018/08/06+18:05:00&detect=true" target=_blank>IoTメディアラボラトリーからのセンサー録画</a></li>
+<li><a href="http://cms.japaneast.cloudapp.azure.com:60/cameramap/?date=2018/09/14+15:38:32&detect=false" target=_blank>TV放送の常時録画</a></li>
+<li><a href="http://cms.japaneast.cloudapp.azure.com:60/cameramap/?date=2018/10/04+19:00:00&detect=true" target=_blank>TV放送のセンサー録画</a></li>
+<li><a href="http://cms.japaneast.cloudapp.azure.com:60/cameramap/?date=2018/10/11+00:00:00&detect=false" target=_blank>OpenCVサンプル動画（オブジェクト分析なし）</a></li>
+<li><a href="http://cms.japaneast.cloudapp.azure.com:60/cameramap/?date=2018/10/11+00:00:00&detect=true" target=_blank>OpenCVサンプル動画（オブジェクト分析あり）</a></li>
+</ul>
+</li>
+<li><b>numberplate：</b>エントリ
+　車載GPS型端末用のサーバー・エントリである。<br>
+各端末の移動軌跡が地図上に表示される。<br>
+（以下はサンプルなので、デモ用の速度で移動するが、実際にはもっと遅い）
+<ul>
+<li><a href="http://cms.japaneast.cloudapp.azure.com:60/numberplate/?date=2018/10/05+09:15:26" target=_blank>ランダムな軌跡その１</a></li>
+<li><a href="http://cms.japaneast.cloudapp.azure.com:60/numberplate/?date=2018/10/05+09:41:42" target=_blank>ランダムな軌跡その２</a></li>
+<li><a href="http://cms.japaneast.cloudapp.azure.com:60/numberplate/?date=2019/02/10+08:25:30" target=_blank><font color=red>ランダムな軌跡その３</font></a></li>
+</ul>
+</li>
+</ul>
+
+<p class="newPage">
+<a name="モジュール構成"></a>
+<h3>● モジュール構成</h3>
+<ul>
+<li>本システムは（複数の）<b>GPS端末</b>と１つのWEBサーバーから構成され、<br>
+サーバー側は（歴史的経緯により）<b>地図サーバー</b>と<b>録画サーバー</b>の２つの部分に大別されている。</li>
+<li><b>GPS端末：　</b>サーバーに対し、自身の位置情報を含む<b>メタデータ</b>をアップロードするクライアント・モジュール。</li>
+<ul>
+<li>カメラ型の場合は、位置情報に加え撮影した動画データもアップロードする。</li>
+<li>アップロードした<b>メタデータ</b>や動画データはサーバーに保管される。</li>
+</ul>
+<li><b>地図サーバー：　</b>各端末からの<b>メタデータ</b>を保管し、閲覧時の入口となるサーバー・モジュールで、<br>
+２つのサーバー・エントリと１つのプログラムで構成される。
+<ul>
+<li><b><font color=red><del>camerademo</del></font> cameramap：　</b>従来からある、カメラ型端末用のアップロード・閲覧用のサーバー・エントリ。</li>
+<li><b>numberplate：　</b>今回新設された、車載GPS型端末用のアップロード・閲覧用のサーバー・エントリ。<br>
+（Apacheの設定にて、上記<b><font color=red><del>camerademo</del> cameramap</font></b>エントリのAliasになっている）</li>
+<li><b>make_plate　</b>指定された情報に基づきナンバープレートの画像ファイルを作成するプログラム。</li>
+</ul>
+</li>
+<li><b>録画サーバー：　</b>各カメラ型端末からの<b>動画データ</b>を保管し、閲覧用JavaScriptに動画を配信するサーバー・モジュール。</li>
+<ul>
+<li>配信の際には、オブジェクト分析を行うか否かの指定ができる。</li>
+<li>行う場合は、配信時に内部分析モジュールを呼び出して分析結果の動画を生成して配信する。（こちらがデフォルト）</li>
+<li>行わない場合は、内部分析モジュールは呼び出さず、保管された原画をそのまま配信する。</li>
+</ul>
+</ul>
+
+<a name="GPS端末動作環境"></a>
+<h3>● GPS端末動作環境</h3>
+<ul>
+<li>本システムのGPS端末はRaspberry Piを用いて作成されている。</li>
+<li>コンピューター名： <b>Raspberry Pi 3</b></li>
+<li>オペレーティング システム： <b>Linux (Raspbian GNU/Linux 9.4)</b></li>
+<li>開発言語：　<b>Python 2.7.13</b></li>
+<li>利用システム：　<b>python-picamera</b>　（カメラ型端末の場合）</li>
+<li>カメラ：　<b>Raspberry　Camera Rev. 1.3</b>　（カメラ型端末の場合）</li>
+<li>人感センサー：　<b>HC-SR501</b>　（カメラ型端末の場合）</li>
+<li>GPS装置：　<b>不明</b>　（非カメラ型端末の場合）</li>
+</ul>
+
+<a name="サーバー動作環境"></a>
+<h3>● サーバー動作環境</h3>
+<ul>
+<li>本システムのサーバーは<b>Microspoft Azure</b>サービスにより作成された<b>仮想マシン</b>上で稼働している。</li>
+<li><del><b>Azure</b>サービスのサブスクリプションIDは<b>bc04488e-d894-4b0d-92c0-8d90137874e8</b>であり、</del></li>
+<li><del>サブスクリプション名は「<b>IoT自動販売機スポンサードプラン</b>」である。</del></li>
+<li><b>Azure</b>サービスのサブスクリプションIDは<b><font color=red>d3d3344c-a56d-4d94-b19c-15f2f170f7d3</font></b>であり、</li>
+<li>サブスクリプション名は「<b><font color=red>Pay-As-You-Go</font></b>」である。</li>
+<li>本システムが稼働する<b>仮想マシン</b>は当該サブスクリプションにより作成された、以下のマシンである。</li>
+<li>コンピューター名： <b>CMS</b></li>
+<li>オペレーティング システム： <b>Linux (Ubuntu 18.04.1 LTS)</b></li>
+<li><del>サイズ： <b>Standard D2s v3 (2 vcpu 数、8 GB メモリ)</b></del></li>
+<li><del>サイズ： <b>Standard D4s_v3 (4 vcpu 数、16 GB メモリ)</b> (*1)</del></li>
+<li><font color=red>サイズ： <b>Standard A2 v2 (2 vcpu 数、4 GB メモリ)</b> (*4)</font></li>
+<li><del>ディスク： <b>2048 GiB Standard SSD</b> (*2)</del></li>
+<li><font color=red>ディスク： <b>256 GiB Standard SSD</b> (*5)</font></li>
+<li><del>パブリック IP アドレス： <b>40.115.142.231</b></del></li>
+<li><del>パブリック IP アドレス： <b>52.246.163.255</b></del></li>
+<li><font color=red>パブリック IP アドレス： <b>40.115.136.123</b></font></li>
+<li>仮想ネットワーク/サブネット： <b>CMS-vnet/default</b></li>
+<li>DNS 名： <b>cms.japaneast.cloudapp.azure.com</b></li>
+<li><del>サーバー側言語： <b>php 7.2.7<font color=red>, python 3.6.6</font></b> (*3)</del></li>
+<li>サーバー側言語： <b>php 7.2.10<font color=red>, python 3.6.7</font></b> (*3)</li>
+<li>クライアント側言語：　<b>JavaScript</b></li>
+<li>利用システム：　<b>Google Calendar API, Google Maps API</b></li>
+</ul>
+<del>(*1) サーバー側で録画画像に対するオブジェクト追跡処理をオンデマンドで行うために、計算能力を上げた。</del><br>
+<del>(*2) 同じ理由で、録画画像の I/O 性能向上のため大きめの SSD を確保した。</del><br>
+(*3) python でオブジェクト追跡処理を行い、php からこのモジュールを呼び出している。<br>
+<font color=red>
+(*4) コスト削減のため小さ目にしたが、<a href="#オブジェクト分析"><b>オブジェクト分析</b></a>を行う場合は多少きついかも知れない。<br>
+(*5) 同様に、小さ目にした。
+</font>
+
+<p class="newPage">
+<a name="システムの使い方"></a>
+<hr>
+<h2>■ システムの使い方</h2>
+
+<a name="GPS端末の操作"></a>
+<h3>● GPS端末の操作</h3>
+　本システムの全ての元データを生成するのがGPS端末である。<br>
+従って、システムの稼働はGPS端末の起動から開始することになる。
+<p>
+<a name="GPS端末の登録"></a>
+<b>〇 GPS端末の登録</b>
+<ul>
+<li>本システムには複数のGPS端末を接続することができる。</li>
+<li>接続された端末を識別するため、個々の端末に<b>端末ID</b>が振られる。</li>
+<li>なので、本システムに新たな端末を追加する場合は、新たな<b>端末ID</b>を取得する必要がある。</li>
+<li>新たな<b>端末ID</b>は<b>地図サーバーの idget.php</b> にアクセスして取得する。</li>
+<li>具体的なURLは <b><tt>http://cms.japaneast.cloudapp.azure.com:60/エントリ/idget.php</tt></b> である。</li>
+<li><b>エントリ</b>の部分は　<b><tt>cameramap</tt></b> 又は <b><tt>numberplate</tt></b> である。</li>
+<li>取得した<b>端末ID</b>は <b>~pi/CMS/cameraID</b> 又は <b>~pi/CMS/numberID</b> というテキストファイルに記述しておく。</li>
+<li><b>idget.php</b> にアクセスすると、システム内部の<font color=red>IDカウンタが増加する</font>ので注意。</li>
+</ul>
+
+<a name="カメラの起動"></a>
+<b>〇 カメラの起動</b> <font color=brown>（暫定仕様）</font>
+<ul>
+<li>カメラ型端末を起動するには、ターミナルから起動コマンドをキーインすることによって行う。</li>
+<li>カメラ型端末の動作には以下の3つのモードがある。</li>
+
+<li><b>プレビューモード</b>
+<ul>
+<li>システムにデータをアップロードせず、ただカメラの撮影範囲をローカル・モニター上で確認するためのモードである。</li>
+<li>起動コマンドは <b>~pi/CMS/preview</b> である。</li>
+</ul>
+<li><b>センサーモード</b>
+<ul>
+<li>人感センサーの感知情報をもとに、間欠的にデータをアップロードするモードである。</li>
+<li>人感センサーの動作検知信号を検知すると、録画・録音とそのデータのアップロードを開始する。</li>
+<li>録画・録音・アップロードの動作開始後、5秒間の間新たな検知信号がない場合は動作を停止し、次の信号を待つ。</li>
+<li>動作中に、新たな動作検知信号が検知されると、動作停止時間を検知の5秒後まで延長する。</li>
+<li>起動コマンドは <b>~pi/CMS/camera</b> である。</li>
+</ul>
+<li><b>常時撮影モード</b>
+<ul>
+<li>人感センサーとは無関係に、常時データをアップロードし続けるモードである。</li>
+<del>
+<li>起動するには <b>~pi/CMS/camera.py</b> の修正が必要となる。</li>
+<li>17行目の <b>SENSOR_TRIGGER = True</b> を <b>False</b> に修正して、<b>~pi/CMS/camera</b> をキーインする。</li>
+</del>
+<li><font color=red>起動コマンドは <b>~pi/CMS/continuous</b> である。</font></li>
+</ul>
+<font color=red>
+<li>いずれのモードの場合も、以下の起動時オプションを受け付ける。
+<ul>
+<li><b>-v : </b>カメラ画像を上下反転して表示・録画する。</li>
+<li><b>-h : </b>カメラ画像を左右反転して表示・録画する。</li>
+</ul>
+</font>
+</ul>
+<a name="ナンバープレートの起動"></a>
+<b>〇 ナンバープレートの起動</b> <font color=brown>（暫定仕様）</font>
+<ul>
+<li>ナンバープレート型端末を起動するには、ターミナルから<br>
+起動コマンド <b>~pi/CMS/numberplate</b> <br>
+をキーインすることによって行う。</li>
+<li>ただし、現状のソフトウエアはGPS装置に<b>対応していない</b>ので、<br>
+<font color=red>デモ用の</font>ランダムな移動データをアップロードし続けるだけである。</li>
+</ul>
+
+<a name="GPS端末の終了"></a>
+<b>〇 GPS端末の終了</b>
+<ul>
+<li>端末ソフトを起動したターミナルで <b>Ctrl-C</b> をキーインすれば、GPS端末は終了する。</li>
+<li>また、<b>SIGUSR1</b> を送ってもので、バックグラウンドで実行したような場合はこうする。</li>
+<li>コマンド <b>~pi/CMS/stop</b> を実行すれば、<b>SIGUSR1</b> を送れる。</li>
+</ul>
+
+<p class="newPage">
+<a name="GPS端末の実行の様子"></a>
+<b>〇 GPS端末の実行の様子</b>
+<ul>
+<li>ターミナル（以下は<b>telnet</b>）を起動して、ログイン。
+<br><img src="img/terminal.PNG"><p></li>
+<li>起動コマンドをキーイン。
+<br><img src="img/camera_start.PNG"><p></li>
+<li>センサーが動きを感知して、5秒間（81フレーム）録画。
+<br><img src="img/camera_sense.PNG"><p></li>
+<li>センサーが長時間の動きを感知、16秒間（225フレーム）録画。
+<br><img src="img/camera_long.PNG"><p></li>
+<li><b>Ctrl-C</b> をキーインしてGPS端末を終了、センサー感知2回で総計22秒の録画。
+<br><img src="img/camera_end.PNG"><p></li>
+</ul>
+</ul>
+<p class="newPage">
+<a name="閲覧操作"></a>
+<h3>● 閲覧操作</h3>
+<p>
+<a name="Googleカレンダー"></a>
+<b>〇 Googleカレンダー</b>
+<ul>
+<li>本システム内に保管されたデータを閲覧するには、まず<b>Googleカレンダー</b>から入る。</li>
+<li>ただし、現状、本システムの<b>Googleカレンダー</b>は一般公開されていないので、共有の登録処理が必要となる。</li>
+<li>共有登録後、<b>Googleカレンダー</b>を開くと、カレンダー中に<b>CMS</b>のエントリが表示される。
+<br><img src="img/calender.PNG"><p></li>
+<li><b>スケジュール表示</b>を選ぶと、エントリの全体が分かりやすく表示される。<br>
+<b>CMS 録画記録</b>と<b>NPTS 追跡記録</b>というエントリが本システムのものである。
+<br><img src="img/schedule.PNG"><p></li>
+<li>ここで、エントリのどれかをクリックすると、以下のようなポップアップが出現する。
+<br><img src="img/popup.PNG"><p></li>
+<li>ポップアップ中の<font color=red>表示したい時刻の</font><b>地図を表示</b>リンクをクリックすると、<br>外部サイト誘導の警告が出るので、リンク先をクリックする。
+<br><img src="img/warn.PNG"><p></li>
+<li>当該日時の<b>Googleマップ</b>が表示される。
+<br><img src="img/map.PNG"><p></li>
+</ul>
+
+<p class="newPage">
+<a name="Googleマップ"></a>
+<b>〇 Googleマップ</b>
+<ul>
+<li><b>Googleマップ</b>中では、各端末は地図上の該当する位置に吹き出しとして表示される。<br>
+以下はカメラ型端末の場合。
+<br><img src="img/camera.PNG"><p></li>
+<li>カメラ型の場合、吹き出し中の詳細ボタンを押すと、その時点のメタデータが表示される。
+<br><img src="img/detail.PNG"><p></li>
+<li>同じく、吹き出しに表示された車載GPS端末の場合。<br>
+このケースでは、赤い線で移動した軌跡が表示されている。
+<br><img src="img/car.PNG"><p></li>
+<li>この端末では、吹き出し中の画像そのものを押すと、その時点のメタデータが表示される。
+<br><img src="img/detail2.PNG"><p></li>
+<li>車載GPS端末の場合は、吹き出しに任意の画像を表示できる。<br>
+以下はナンバープレート画像を選択したケース。<br>
+詳細は<a href="#カメラ・端末の設定">カメラ・端末の設定</a>を参照。
+<br><img src="img/number.PNG"><p></li>
+</ul>
+
+<p class="newPage">
+<a name="表示・再生の制御"></a>
+<b>〇 表示・再生の制御</b>
+<ul>
+<li>地図は任意の時点でのデータ再現（録画再生を含む）が可能になっている。</li>
+<li>地図の上にある、時間移動バーで指定すればよい。</li>
+<li>ただし、この時間移動バー中の「現在の時刻に移動」は、実際の現在時刻より２分前の状態までしか復元できない。
+<br><img src="img/map.PNG"><p></li>
+<li>また、地図中にカメラ型端末が表示されている場合は、吹き出しで録画動画の再生制御が行える。<br>
+吹き出し中の &lt;&lt; || &gt;&gt の各ボタンで巻き戻し・一時停止・早送りが可能である。</li>
+<li>[消音]ボタンを押すと、再生音がミュートされる。
+<br><img src="img/camera.PNG"><p></li>
+<li>さらに、カメラ型端末では、再生中の動画領域をクリックすると、録画再生専用のウィンドウが別途生成される。</li>
+<li>ここでの再生制御も、吹き出しと同様の操作が可能である。
+<br><img src="img/player.PNG"><p></li>
+</ul>
+
+<p class="newPage">
+<a name="オブジェクト分析の制御"></a>
+<b>〇 オブジェクト分析の制御</b>
+<ul>
+<li>録画再生の際に、オブジェクト抽出及び追跡を行うことができる。<br>
+以下は、オブジェクト分析を行って再生した「録画再生専用のウィンドウ」である。<br>
+抽出されたオブジェクト（歩く人）が各色の矩形でマークされ、追跡されている。
+<br><img src="img/object.PNG"><p></li>
+<li>オブジェクト分析を行うかどうかは、時間移動バーの左にある「検出チェックボックス」で指定して「時間移動」すればよい。
+<br><img src="img/detect.PNG"><p></li>
+<li>カレンダーから地図を開いた時の初期状態は、「分析<del>あり</del><font color=red>なし</font>」になっている。
+<br><img src="img/map2.PNG"><p></li>
+<li>ここで、「検出チェックボックス」をオフにして、[指定時刻に移動]ボタンを押せば、分析のない再生となる。
+<br><img src="img/map3.PNG"><p></li>
+</ul>
+
+<p class="newPage">
+<a name="カメラ・端末の設定"></a>
+<b>〇 カメラ・端末の設定</b>
+<ul>
+<li>地図画面の右上の歯車ボタンを押すと、カメラ・端末の設定画面が別ウィンドウに表示される。</li>
+<li>サーバー・エントリが<b>cameramap</b>の場合は、以下のような画面が表示され、新たなカメラの追加や既存カメラの録画サーバーの変更ができる。
+<br><img src="img/setup_camera.PNG"><p></li>
+<li>以下が、<b>cameramap</b>の場合の端末編集画面である。
+<br><img src="img/update_camera.PNG"></li>
+<li>但し、現状では録画サーバーが1台だけなので、特に編集できる項目はない。<p></li>
+<li>サーバー・エントリが<b>numberplate</b>の場合は、以下のような画面が表示され、新たなGPS端末の追加や既存端末の画像や軌跡の変更ができる。
+<br><img src="img/setup_number.PNG"><p></li>
+<li>以下が、<b>numberplate</b>の場合の端末編集画面である。<p>
+<ul>
+<li>録画機能をもった端末（カメラと同等）の場合、
+<br><img src="img/rec.PNG"><p></li>
+<li>ナンバープレート画像を作成する場合、
+<br><img src="img/make.PNG"><p></li>
+<li>特定の画像をアップロードする場合、
+<br><img src="img/upload.PNG"><p></li>
+</ul>
+</ul>
+
+<!--
+<p class="newPage">
+<a name="データフロー"></a>
+<hr>
+<h2> データフロー</h2>
+
+<a name="データのアップロード"></a>
+<h3>● データのアップロード</h3>
+<p>
+<a name="アップロード.メタデータ"></a>
+<b>〇 メタデータ</b>
+<p>
+<a name="アップロード.画像データ"></a>
+<b>〇 画像データ</b>
+
+<a name="データの保管"></a>
+<h3>● データの保管</h3>
+<p>
+<a name="保管.メタデータ"></a>
+<b>〇 メタデータ</b>
+<p>
+<a name="保管.画像データ"></a>
+<b>〇 画像データ</b>
+
+<a name="データの閲覧・再生"></a>
+<h3>● データの閲覧・再生</h3>
+<p>
+<a name="GPS端末の存在判定"></a>
+<b>〇 GPS端末の存在判定</b>
+<p>
+<a name="動画再生"></a>
+<b>〇 動画再生</b>
+<p>
+<a name="軌跡表示"></a>
+<b>〇 軌跡表示</b>
+-->
+
+<p class="newPage">
+<a name="オブジェクト分析"></a>
+<hr>
+<h2>■ オブジェクト分析</h2>
+
+<a name="実装方法の検討"></a>
+<h3>● 実装方法の検討</h3>
+　オブジェクト分析は別途　OpenCV を利用して開発された分析モジュールを、どのように<b>CMS</b>に取り込めば良いか<br>
+いくつか検討すべき事項があったので、ここに記述しておく。
+<ul>
+<b><li>どこで分析するか？</b><br>
+　カメラ、サーバ、クライアントの３候補がある。
+<ol>
+<li>カメラで分析する場合
+<ul>
+<li>負荷分散から考えると理想的。</li>
+<li><b>撮影時に処理してしまうので、検出能力の改善が過去の動画に反映できない。</b></li>
+<li>また、原画に加工を加えるのは避けたい。</li>
+<li>検出結果の画像は原画とは別のものとなる。</li>
+<li>これをサーバにアップロードする必要がある。</li>
+<li><b>アップロード負荷が現状の２倍になる。</b></li>
+<li>フレームレートが現状の半分になる。</li>
+</ul>
+</li>
+<li>サーバで分析する場合
+<ul>
+<li>現状では、複数カメラを１つのサーバで録画しているので負荷が集中。</li>
+<li>ただし、サーバ構成を変更すれば負荷分散は可能。</li>
+<li>処理タイミングは、録画時、閲覧時、定期バッチ等自由度が高い。</li>
+<li>検出能力の改善時は、処理タイミングに応じて反映可能。</li>
+</ul>
+</li>
+<li>クライアントで分析する場合
+<ul>
+<li><b>クライアント側に OpenCV の環境が必要。</b></li>
+<li>現状の再生言語 JavaScript から、検出言語 Python は呼び出せない。</li>
+<li>なので、ソケットやファイルを介した間接連携が必要になる。</li>
+<li>そのため、<b>ブラウザだけで閲覧可能という利点が失われる。</b></li>
+<li>クライアントが PC ならある程度の環境構築が可能だが、スマホ系の場合どうか？</li>
+<li>検出能力の改善時は、検出ソフトのアップデートのみで即反映可能。</li>
+</ul>
+</li>
+</li>
+</ol>
+<b><li>いつ分析するか？</b><br>
+　撮影時（＝録画時）、オンデマンド（＝閲覧時）、定期バッチ等が考えられる。
+<ol>
+<li>録画時に分析する場合
+<ul>
+<li>負荷分散から考えると理想的。</li>
+<li>ただし、<b>検出能力の改善が反映できない</b>。</li>
+</ul>
+</li>
+<li>閲覧時に分析する場合
+<ul>
+<li>サーバで分析するなら、<b>負荷分散に対して検討が必要</b>。</li>
+<li>クライアントで分析するなら、<b>環境構築に対して検討が必要</b>。</li>
+<li>検出能力の改善時は、検出ソフトのアップデートのみで即反映可能。</li>
+</ul>
+</li>
+<li>定期バッチで分析する場合
+<ul>
+<li>負荷分散は比較的簡単。</li>
+<li>録画直後の動画に対する<b>分析が次期バッチ時まで不能</b>。</li>
+<li>検出能力の改善時は、<b>再度の（大量）分析バッチ処理が必要となる</b>。</li>
+</ul>
+</li>
+</li>
+</ol>
+</ul>
+上記の検討事項を踏まえ、以下の実装方法を採用した。
+<ul>
+<li>分析処理は<b>録画サーバー</b>で行う。</li>
+<li>分析処理は<b>動画の再生時に（オンデマンドで）</b>行う。</li>
+<li>分析処理の結果は<b>一時ファイル</b>とし、永続保持はしない。</li>
+</ul>
+
+<p class="newPage">
+<a name="分析方法の概要"></a>
+<h3>● 分析方法の概要</h3>
+<ul>
+<li>オブジェクト抽出はフレーム間差分により前景・背景判定による前景抽出方法を採用した。</li>
+<li>使用した背景判定モジュールは <b>OpenCV</b> 内蔵の <b>BackgroundSubtractorKNN</b> である。</li>
+<li><b>BackgroundSubtractorKNN</b> については<a href="https://docs.opencv.org/3.4.1/db/d88/classcv_1_1BackgroundSubtractorKNN.html"　target=_blank>こちら</a>を参照のこと。
+<li>上記で検出した前景をオブジェクトと見做し、これを個々に追跡し矩形表示で強調した。</li>
+<li>使用した追跡モジュールは、オリジナル開発の <b>Particle 追跡モジュール</b> である。</li>
+</ul>
+<a name="Particle"></a>
+<b>〇 Particle 追跡モジュール</b><br>
+　Particle 追跡モジュールは、概念的には以下の手順で追跡を行う。
+<ul>
+<li>まず、追跡対象の<b>特徴を把握</b>する。今回は追跡対象の<b>中心部の色</b>を特徴と見做すこととした。</li>
+<li>追跡対象のある位置を追跡開始位置とし、その近辺に確率分布に従ってランダムに<b>探索粒子をばら撒く</b>。</li>
+<li>ばら撒いた各探索粒子の位置の（或いは周辺の）画像データを把握している追跡対象の<b>特徴と比較評価</b>する。</li>
+<li>その比較評価を数値化し、当該探索粒子の<b>尤度（ゆうど）</b>とする。</li>
+<li>各粒子の尤度を重さと見做したときの、全ての探索粒子の<b>重心の位置</b>を計算する。（加重平均）</li>
+<li>対象物はその重心位置に<b>移動したと判断</b>する。</li>
+<li>以降、同様な処理を繰り返し、対象物を追跡する。</li>
+</ul>
+<p>
+<hr>
+<address>
+<del>2018.08.27</del><br>
+<del>2018.10.25</del><br>
+<font color=red>2019.02.11</font><br>
+小島昌彦
+</address>
+</body>
+</html>

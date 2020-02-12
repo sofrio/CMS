@@ -1,0 +1,6 @@
+#!/bin/sh
+
+cd /CMS/REC/detect
+python3 main.py < movielist.json
+python3 test.py
+
