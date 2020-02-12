@@ -1,0 +1,4 @@
+#!/bin/sh
+
+pID=/tmp/CMS/pID
+kill -USR1 `cat $pID`
