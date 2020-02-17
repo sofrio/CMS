@@ -26,8 +26,8 @@ https://sofrio.github.io/CMS/
 本システムは、    
 * Apache2
 * php7
-* python3
-* OpenCV
+* python2
+* OpenCV2
 * Google Maps API
 * Google Calendar API
  
